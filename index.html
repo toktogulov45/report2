@@ -17,60 +17,48 @@
         .item-name { flex: 1; padding-right: 10px; font-size: 14px; }
         .item-input { width: 80px; margin-bottom: 0; text-align: center; border: 1px solid var(--tg-theme-button-color); }
         
-        #submit-btn { 
-            width: 100%; padding: 15px; 
-            background-color: var(--tg-theme-button-color); 
-            color: var(--tg-theme-button-text-color); 
-            border: none; border-radius: 8px; 
-            font-size: 16px; font-weight: bold; 
-            margin-top: 20px; position: sticky; bottom: 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        /* Стили корзины */
+        #summary-container { margin-top: 15px; border-top: 2px solid #eee; padding-top: 10px; }
+        .summary-item { 
+            background: rgba(0,0,0,0.05); padding: 10px; border-radius: 8px; 
+            margin-bottom: 8px; font-size: 13px; position: relative;
+            border-left: 5px solid var(--tg-theme-button-color);
         }
-        hr { border: 0; border-top: 1px solid #eee; margin: 20px 0; }
+        .remove-btn { color: #ff4d4d; font-weight: bold; float: right; cursor: pointer; padding: 0 5px; }
+
+        #add-btn { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 8px; margin-bottom: 15px; font-weight: bold; }
+        #submit-btn { width: 100%; padding: 15px; background-color: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color); border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 10px; }
     </style>
 </head>
 <body>
-    <h3>Отчет по работам</h3>
+    <h3>Сборный отчет ГИК</h3>
     
     <div class="meta-info">
-        <label>Дата отчета</label>
+        <label>Дата</label>
         <input type="date" id="report-date">
-        
         <div class="meta-row">
             <div>
                 <label>Блок</label>
                 <select id="block-num">
-                    <option value="">Выбрать...</option>
-                    <option value="26">Блок 26</option>
-                    <option value="27">Блок 27</option>
-                    <option value="28">Блок 28</option>
-                    <option value="29">Блок 29</option>
-                    <option value="30">Блок 30</option>
-                    <option value="31">Блок 31</option>
-                    <option value="32">Блок 32</option>
-                    <option value="33">Блок 33</option>
-                    <option value="34">Блок 34</option>
-                    <option value="35">Блок 35</option>
+                    <option value="26">26</option><option value="27">27</option>
+                    <option value="28">28</option><option value="29">29</option>
+                    <option value="30">30</option><option value="31">31</option>
+                    <option value="32">32</option><option value="33">33</option>
+                    <option value="34">34</option><option value="35">35</option>
                 </select>
             </div>
             <div>
                 <label>Этаж</label>
                 <select id="floor-num">
-                    <option value="">Выбрать...</option>
                     <option value="Крыша">Крыша</option>
-                    <script>
-                        for (let i = 24; i >= 1; i--) {
-                            document.write(`<option value="${i}">${i} этаж</option>`);
-                        }
-                    </script>
-                    <option value="-1">-1 этаж</option>
-                    <option value="-2">-2 этаж</option>
+                    <script>for(let i=24;i>=1;i--) document.write(`<option value="${i}">${i} эт.</option>`);</script>
+                    <option value="-1">-1 эт.</option><option value="-2">-2 эт.</option>
                 </select>
             </div>
         </div>
     </div>
 
-    <hr>
+    <hr style="border:0; border-top:1px solid #eee;">
 
     <select id="section" onchange="loadCategories()">
         <option value="">1. Выберите раздел...</option>
@@ -78,138 +66,112 @@
         <option value="Эм">Электромонтаж</option>
         <option value="Мех">Механика</option>
     </select>
-    
     <select id="category" onchange="loadItems()" style="display:none;"></select>
     
     <div id="items-container"></div>
-    
-    <button id="submit-btn" style="display:none;" onclick="sendData()">Отправить в базу</button>
+    <button id="add-btn" style="display:none;" onclick="addToBasket()">➕ Добавить в список</button>
+
+    <div id="summary-container"></div>
+    <button id="submit-btn" style="display:none;" onclick="sendToBot()">🚀 Отправить Excel (0)</button>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        
-        // Устанавливаем сегодня по умолчанию
         document.getElementById('report-date').valueAsDate = new Date();
 
-        let basket = {}; // Здесь храним все введенные значения: { "Название работы": значение }
+        let finalBasket = []; 
 
         const allData = {
             "Эм": {
-                "Авт. выкл.": ["Установка автоматических выключателей (габарит 100) 100 250А (шт)", "Установка автоматических выключателей (габарит 100) 40 80А (шт)", "Установка автоматических выключателей 25 80А (шт)", "Установка автоматических выключателей однополюсных 10 63А (шт)"],
-                "Кабель Ал-й": ["Монтаж Кабель алюминиевый 3х185+1х120мм2 АВВГ 0,66 (м)", "Монтаж Кабель алюминиевый 3х70+1х35мм2 АВВГ 0,66 (м)", "Монтаж Кабель алюминиевый 5x70 АВВГ 0,66 (м)", "Монтаж Кабель алюминиевый 5x95 АВВГ 0,66 (м)", "Монтаж Кабель алюминиевый 3х95+1 х50 мм2 АВВГ 0,66 (м)", "Монтаж Кабель алюминиевый 1х120мм2 АПВ (м)", "Монтаж Кабель алюминиевый 1х35мм2 АПВ (м)", "Монтаж Кабель алюминиевый 3х240+1х120мм2 АВВГ 0,66 (м)", "Монтаж Кабель алюминиевый 3х150+1х95мм2 АВВГ 0,66 (м)"],
-                "Кабель Медь": ["Монтаж Кабель медный 3х1,5мм2 ВВГ нг ls 0,66 (м)", "Монтаж Кабель медный 3х2,5мм2 ВВГ нг ls 0,66 (м)", "Монтаж Кабель медный 3х4мм2 (м)", "Монтаж Кабель медный 1х6мм2 (м)", "Монтаж Кабель медный 5х16мм2 ВВГ нг ls 0,66 (м)", "Монтаж Кабель медный 5х2,5мм2 ВВГ нг ls 0,66 (м)"],
-                "Лотки": ["Монтаж кабельных лотков 300x50x0,7 (м)", "Монтаж кабельных лотков 200x50x0,7 (м)", "Монтаж кабельных лотков 100x50x0,7 (м)"],
-                "Подг. работы": ["Пробивка отверстий в кирпиче (шт)", "Пробивка отверстий в бетоне (шт)", "Штроба по кирпичу (м)", "Штроба по бетону (м)"],
-                "Э К Щиты": ["ЩК (щит квартирный) (Установка) (шт)", "ЩЭ (Щит этажный) (Установка) (шт)"],
-                "Трубы и прочее": ["Монтаж гофрированной трубы ПВХ Ф20мм (м)", "Монтаж трубы полиэтиленовой ПВД25С (м)", "Монтаж сталь полосовая 40х4мм (м)"]
+                "Авт. выкл.": ["Авт. выкл. 100-250А (шт)", "Авт. выкл. 40-80А (шт)", "Авт. выкл. 25-80А (шт)"],
+                "Кабель Ал-й": ["АВВГ 3х185+1х120 (м)", "АВВГ 3х70+1х35 (м)", "АВВГ 5x70 (м)"],
+                "Кабель Медь": ["ВВГ нг ls 3х1,5 (м)", "ВВГ нг ls 3х2,5 (м)", "ВВГ нг ls 5х16 (м)"]
             },
             "Мех": {
-                "ППР 20": ["Монтаж труб пластиковых Ø20 композит (м)", "Установка муфт, отводов ППР Ø20 (шт)", "Установка вентилей ППР Ø20 (шт)"],
-                "ППР 25": ["Монтаж труб пластиковых Ø25 композит (м)", "Установка муфт, отводов ППР Ø25 (шт)"],
-                "Радиатор": ["Установка радиаторов отопления (шт)", "Угловые краны для радиаторов (шт)"],
-                "Трубы стальные": ["Монтаж трубы металлической Ø20 (м)", "Монтаж трубы металлической Ø25 (м)", "Монтаж трубы металлической Ø57 (м)"],
-                "ПВХ": ["Монтаж трубы канализационной пвх д100 (м)", "Монтаж трубы канализационной пвх д50 (м)"],
-                "Фаянс": ["Установка унитаза (шт)", "Установка умывальника (шт)", "Установка смесителя (шт)"]
+                "ППР 20": ["Труба ППР Ø20 (м)", "Муфта ППР Ø20 (шт)", "Вентиль ППР Ø20 (шт)"],
+                "Радиатор": ["Установка радиатора (шт)", "Кран радиаторный (шт)"]
             },
             "Стр": {
-                "Кладка": ["Газоблок 600*300*200 (шт)", "Газоблок 600*300*100 (шт)", "Сетка ВР 4 (15см) (м)"],
-                "Черновая отделка": ["Стяжка пола (м2)", "Штукатурка стен (м2)", "Бетоноконтакт (м2)"],
-                "Чистовая отделка": ["Глат шпатлевка (м2)", "Покраска (м2)", "Кафель (м2)"]
+                "Кладка": ["Газоблок 600*300*200 (шт)", "Газоблок 600*300*100 (шт)", "Сетка ВР 4 (м)"]
             }
         };
 
         function loadCategories() {
             const section = document.getElementById('section').value;
-            const catSelect = document.getElementById('category');
+            const cat = document.getElementById('category');
             document.getElementById('items-container').innerHTML = '';
-            
-            if (!section) {
-                catSelect.style.display = 'none';
-                return;
-            }
-
-            catSelect.innerHTML = '<option value="">2. Выберите категорию...</option>';
-            for (let cat in allData[section]) {
-                catSelect.innerHTML += `<option value="${cat}">${cat}</option>`;
-            }
-            catSelect.style.display = 'block';
+            if(!section) { cat.style.display='none'; return; }
+            cat.innerHTML = '<option value="">2. Выберите категорию...</option>';
+            for(let c in allData[section]) cat.innerHTML += `<option value="${c}">${c}</option>`;
+            cat.style.display = 'block';
         }
 
         function loadItems() {
             const section = document.getElementById('section').value;
             const category = document.getElementById('category').value;
-            const itemsDiv = document.getElementById('items-container');
-            itemsDiv.innerHTML = '';
-
-            if (!category) return;
-
-            const items = allData[section][category];
-            items.forEach((item, index) => {
-                // Если в корзине уже есть значение для этой работы, выводим его
-                const val = basket[item] || "";
-                itemsDiv.innerHTML += `
-                    <div class="item-row">
-                        <div class="item-name">${item}</div>
-                        <input type="number" pattern="[0-9]*" inputmode="numeric" 
-                               class="item-input" 
-                               data-name="${item}" 
-                               value="${val}"
-                               placeholder="0"
-                               oninput="saveValue(this)">
-                    </div>`;
+            const div = document.getElementById('items-container');
+            div.innerHTML = '';
+            if(!category) { document.getElementById('add-btn').style.display='none'; return; }
+            allData[section][category].forEach((item, i) => {
+                div.innerHTML += `<div class="item-row"><div class="item-name">${item}</div><input type="number" class="item-input" data-name="${item}" placeholder="0"></div>`;
             });
-            document.getElementById('submit-btn').style.display = 'block';
-            updateButton();
+            document.getElementById('add-btn').style.display = 'block';
         }
 
-        // Сохраняем каждое изменение в общую корзину
-        function saveValue(input) {
-            const name = input.getAttribute('data-name');
-            const val = parseFloat(input.value);
-            
-            if (val > 0) {
-                basket[name] = val;
-            } else {
-                delete basket[name];
-            }
-            updateButton();
-        }
-
-        function updateButton() {
-            const count = Object.keys(basket).length;
-            const btn = document.getElementById('submit-btn');
-            btn.innerText = count > 0 ? `Отправить в базу (Выбрано: ${count})` : "Отправить в базу";
-        }
-
-        function sendData() {
-            const date = document.getElementById('report-date').value;
+        function addToBasket() {
             const block = document.getElementById('block-num').value;
             const floor = document.getElementById('floor-num').value;
+            const inputs = document.querySelectorAll('.item-input');
+            let hasData = false;
 
-            if (!block || !floor) {
-                tg.showAlert("⚠️ Выберите Блок и Этаж!");
-                return;
+            inputs.forEach(input => {
+                const val = parseFloat(input.value);
+                if (val > 0) {
+                    finalBasket.push({
+                        block: block,
+                        floor: floor,
+                        name: input.getAttribute('data-name'),
+                        value: val
+                    });
+                    input.value = ''; 
+                    hasData = true;
+                }
+            });
+
+            if(hasData) {
+                renderSummary();
+                tg.HapticFeedback.impactOccurred('medium');
+            } else {
+                tg.showAlert("Введите хотя бы один объем!");
             }
+        }
 
-            let finalReport = [];
-            for (let name in basket) {
-                finalReport.push({ name: name, value: basket[name] });
-            }
+        function renderSummary() {
+            const container = document.getElementById('summary-container');
+            container.innerHTML = '<b>К отправке:</b><br>';
+            finalBasket.forEach((item, index) => {
+                container.innerHTML += `
+                    <div class="summary-item">
+                        <span class="remove-btn" onclick="removeItem(${index})">✖</span>
+                        <b>Блок ${item.block}, эт. ${item.floor}:</b><br>${item.name} — ${item.value}
+                    </div>`;
+            });
+            const btn = document.getElementById('submit-btn');
+            btn.style.display = finalBasket.length > 0 ? 'block' : 'none';
+            btn.innerText = `🚀 Отправить Excel (${finalBasket.length})`;
+        }
 
-            if (finalReport.length === 0) {
-                tg.showAlert("⚠️ Вы ничего не заполнили!");
-                return;
-            }
+        function removeItem(index) {
+            finalBasket.splice(index, 1);
+            renderSummary();
+        }
 
-            const payload = {
-                date: date,
-                block: block,
-                floor: floor,
-                items: finalReport
+        function sendToBot() {
+            const data = {
+                date: document.getElementById('report-date').value,
+                items: finalBasket
             };
-
-            tg.sendData(JSON.stringify(payload));
+            tg.sendData(JSON.stringify(data));
         }
     </script>
 </body>
