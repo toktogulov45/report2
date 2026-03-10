@@ -112,8 +112,19 @@
             const div = document.getElementById('items-container');
             div.innerHTML = '';
             if(!category) { document.getElementById('add-btn').style.display='none'; return; }
+            
             allData[section][category].forEach((item, i) => {
-                div.innerHTML += `<div class="item-row"><div class="item-name">${item}</div><input type="number" class="item-input" data-name="${item}" placeholder="0"></div>`;
+                div.innerHTML += `
+                    <div class="item-row">
+                        <div class="item-name">${item}</div>
+                        <input type="number" 
+                               pattern="[0-9]*" 
+                               inputmode="decimal" 
+                               step="any" 
+                               class="item-input" 
+                               data-name="${item}" 
+                               placeholder="0">
+                    </div>`;
             });
             document.getElementById('add-btn').style.display = 'block';
         }
@@ -176,3 +187,4 @@
     </script>
 </body>
 </html>
+
