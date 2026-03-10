@@ -7,16 +7,41 @@
     <style>
         body { font-family: sans-serif; padding: 15px; background-color: var(--tg-theme-bg-color); color: var(--tg-theme-text-color); }
         h3 { margin-top: 0; text-align: center; }
-        select, input { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; box-sizing: border-box; }
+        select, input { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; box-sizing: border-box; background: #fff; }
+        
+        /* Стили для новых полей */
+        .meta-row { display: flex; gap: 10px; }
+        .meta-row > div { flex: 1; }
+        label { font-size: 12px; margin-bottom: 5px; display: block; opacity: 0.8; }
+
         .item-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
         .item-name { flex: 1; padding-right: 10px; font-size: 14px; }
         .item-input { width: 80px; margin-bottom: 0; text-align: center; }
+        
         #submit-btn { width: 100%; padding: 15px; background-color: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color); border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 20px; }
     </style>
 </head>
 <body>
     <h3>Отчет по работам</h3>
     
+    <div class="meta-info">
+        <label>Дата</label>
+        <input type="date" id="report-date">
+        
+        <div class="meta-row">
+            <div>
+                <label>Блок</label>
+                <input type="text" id="block-num" placeholder="Напр: 26">
+            </div>
+            <div>
+                <label>Этаж</label>
+                <input type="number" id="floor-num" placeholder="0">
+            </div>
+        </div>
+    </div>
+
+    <hr style="border: 0; border-top: 1px solid #eee; margin-bottom: 20px;">
+
     <select id="section" onchange="loadCategories()">
         <option value="">1. Выберите раздел...</option>
         <option value="Стр">Строительство</option>
@@ -32,9 +57,11 @@
 
     <script>
         const tg = window.Telegram.WebApp;
-        tg.expand(); // Разворачиваем окно на весь экран телефона
+        tg.expand();
 
-        // СЮДА ВСТАВЬТЕ ВЕСЬ ВАШ СЛОВАРЬ (const allData = { "Эм": {...}, "Мех": {...}, "Стр": {...} });
+        // Устанавливаем текущую дату по умолчанию
+        document.getElementById('report-date').valueAsDate = new Date();
+
         const allData = {
             "Эм": {
                 "Авт. выкл.": ["Установка автоматических выключателей (габарит 100) 100 250А (шт)", "Установка автоматических выключателей (габарит 100) 40 80А (шт)", "Установка автоматических выключателей 25 80А (шт)", "Установка автоматических выключателей однополюсных 10 63А (шт)"],
@@ -70,37 +97,11 @@
                 "Оборудование": ["Установка повысительной насосной станции Sololift (шт)", "Установка дренажного насоса (типа Гном) (шт)", "Установка водомерных узлов д80 (рама) (шт)", "Установка водомерных узлов д50 (рама) (шт)", "Установка водомерных узлов д40 (рама) (шт)", "Установка водомерных узлов д15 (рама) (шт)", "Установка электрических клапанов (шт)", "Установка пожарной насосной станции (шт)"],
                 "Защита": ["Установка фильтров сетчатых (шт)", "Установка обратных клапанов (шт)", "Установка автоматического воздухоотводчика (шт)", "Установка компенсатора сильфонного Ду 20 (шт)", "Установка компенсатора сильфонного Ду 25 (шт)", "Установка компенсатора сильфонного Ду 32 (шт)", "Установка компенсатора сильфонного Ду 40 (шт)", "Установка компенсатора сильфонного Ду 50 (шт)"]
             },
-            
             "Стр": {
-                "Кладка": [
-                    "Газоблок 600*300*200 (шт)",
-                    "Сетка ВР 4 (15см) (м)",
-                    "Газоблок 600*300*100 (шт)",
-                    "Сетка ВР 4 (10см) (м)",
-                    "Арматура 6мм (м)",
-                    "Сетка металл 10*10мм (м2)"
-                ],
-                "Усиление стен": [
-                    "Уголок 50*50*5 (м)",
-                    "Уголок 40*40*4 (м)",
-                    "Полоса 40*3мм (м)",
-                    "Арматура 10мм (м)"
-                ],
-                "Черновая отделка": [
-                    "Бетоноконтакт (м2)",
-                    "Бетоноконтакт потолок (м2)",
-                    "Стяжка пола (м2)",
-                    "Сетка ВР4 15*15 (м2)",
-                    "Штукатурка стен (м2)",
-                    "Grender гипсовая (м2)",
-                    "Гипсокартон (м2)"
-                ],
-                "Чистовая отделка": [
-                    "Глат шпатлевка (м2)",
-                    "Финишная шпатлевка (м2)",
-                    "Покраска (м2)",
-                    "Кафель (м2)"
-                ]
+                "Кладка": ["Газоблок 600*300*200 (шт)", "Сетка ВР 4 (15см) (м)", "Газоблок 600*300*100 (шт)", "Сетка ВР 4 (10см) (м)", "Арматура 6мм (м)", "Сетка металл 10*10мм (м2)"],
+                "Усиление стен": ["Уголок 50*50*5 (м)", "Уголок 40*40*4 (м)", "Полоса 40*3мм (м)", "Арматура 10мм (м)"],
+                "Черновая отделка": ["Бетоноконтакт (м2)", "Бетоноконтакт потолок (м2)", "Стяжка пола (м2)", "Сетка ВР4 15*15 (м2)", "Штукатурка стен (м2)", "Grender гипсовая (м2)", "Гипсокартон (м2)"],
+                "Чистовая отделка": ["Глат шпатлевка (м2)", "Финишная шпатлевка (м2)", "Покраска (м2)", "Кафель (м2)"]
             }
         };
 
@@ -126,7 +127,6 @@
             const section = document.getElementById('section').value;
             const category = document.getElementById('category').value;
             const itemsDiv = document.getElementById('items-container');
-            
             itemsDiv.innerHTML = '';
 
             if (!category) {
@@ -150,7 +150,6 @@
             const inputs = document.querySelectorAll('.item-input');
             let report = [];
             
-            // Собираем только те поля, где ввели цифры больше нуля
             inputs.forEach(input => {
                 if (input.value && parseFloat(input.value) > 0) {
                     report.push({ name: input.getAttribute('data-name'), value: parseFloat(input.value) });
@@ -162,14 +161,25 @@
                 return;
             }
 
-            // Формируем финальный пакет данных
+            const date = document.getElementById('report-date').value;
+            const block = document.getElementById('block-num').value;
+            const floor = document.getElementById('floor-num').value;
+
+            if (!block || !floor) {
+                tg.showAlert("Укажите блок и этаж!");
+                return;
+            }
+
+            // Теперь в JSON будут и дата, и блок, и этаж
             const finalData = {
+                date: date,
+                block: block,
+                floor: floor,
                 section: document.getElementById('section').value,
                 category: document.getElementById('category').value,
                 items: report
             };
 
-            // Отправляем JSON обратно в бота и закрываем окно
             tg.sendData(JSON.stringify(finalData));
         }
     </script>
