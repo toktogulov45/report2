@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 15px; background-color: var(--tg-theme-bg-color); color: var(--tg-theme-text-color); }
+        h3 { margin-top: 0; text-align: center; }
+        select, input { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; box-sizing: border-box; }
+        .item-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+        .item-name { flex: 1; padding-right: 10px; font-size: 14px; }
+        .item-input { width: 80px; margin-bottom: 0; text-align: center; }
+        #submit-btn { width: 100%; padding: 15px; background-color: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color); border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h3>Отчет по работам</h3>
+    
+    <select id="section" onchange="loadCategories()">
+        <option value="">1. Выберите раздел...</option>
+        <option value="Стр">Строительство</option>
+        <option value="Эм">Электромонтаж</option>
+        <option value="Мех">Механика</option>
+    </select>
+    
+    <select id="category" onchange="loadItems()" style="display:none;"></select>
+    
+    <div id="items-container"></div>
+    
+    <button id="submit-btn" style="display:none;" onclick="sendData()">Отправить в базу</button>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // Разворачиваем окно на весь экран телефона
+
+        // СЮДА ВСТАВЬТЕ ВЕСЬ ВАШ СЛОВАРЬ (const allData = { "Эм": {...}, "Мех": {...}, "Стр": {...} });
+        const allData = {
+            "Стр": {
+                "Кладка": ["Газоблок 600*300*200 (шт)", "Арматура 6мм (м)"],
+                "Чистовая отделка": ["Глат шпатлевка (м2)", "Кафель (м2)"]
+            } // Я сократил для примера, вставьте ваш полный код!
+        };
+
+        function loadCategories() {
+            const section = document.getElementById('section').value;
+            const catSelect = document.getElementById('category');
+            document.getElementById('items-container').innerHTML = '';
+            document.getElementById('submit-btn').style.display = 'none';
+
+            if (!section) {
+                catSelect.style.display = 'none';
+                return;
+            }
+
+            catSelect.innerHTML = '<option value="">2. Выберите категорию...</option>';
+            for (let cat in allData[section]) {
+                catSelect.innerHTML += `<option value="${cat}">${cat}</option>`;
+            }
+            catSelect.style.display = 'block';
+        }
+
+        function loadItems() {
+            const section = document.getElementById('section').value;
+            const category = document.getElementById('category').value;
+            const itemsDiv = document.getElementById('items-container');
+            
+            itemsDiv.innerHTML = '';
+
+            if (!category) {
+                document.getElementById('submit-btn').style.display = 'none';
+                return;
+            }
+
+            const items = allData[section][category];
+            items.forEach((item, index) => {
+                itemsDiv.innerHTML += `
+                    <div class="item-row">
+                        <div class="item-name">${item}</div>
+                        <input type="number" pattern="[0-9]*" inputmode="numeric" class="item-input" id="item-${index}" data-name="${item}" placeholder="0">
+                    </div>
+                `;
+            });
+            document.getElementById('submit-btn').style.display = 'block';
+        }
+
+        function sendData() {
+            const inputs = document.querySelectorAll('.item-input');
+            let report = [];
+            
+            // Собираем только те поля, где ввели цифры больше нуля
+            inputs.forEach(input => {
+                if (input.value && parseFloat(input.value) > 0) {
+                    report.push({ name: input.getAttribute('data-name'), value: parseFloat(input.value) });
+                }
+            });
+
+            if (report.length === 0) {
+                tg.showAlert("Заполните хотя бы один объем работ!");
+                return;
+            }
+
+            // Формируем финальный пакет данных
+            const finalData = {
+                section: document.getElementById('section').value,
+                category: document.getElementById('category').value,
+                items: report
+            };
+
+            // Отправляем JSON обратно в бота и закрываем окно
+            tg.sendData(JSON.stringify(finalData));
+        }
+    </script>
+</body>
+</html>
