@@ -189,6 +189,8 @@
         }
 
         function addToBasket() {
+            // Считываем дату в момент добавления позиции
+            const dateVal = document.getElementById('report-date').value; 
             const block = document.getElementById('block-num').value;
             const floor = document.getElementById('floor-num').value;
             const inputs = document.querySelectorAll('.item-input');
@@ -198,6 +200,7 @@
                 const val = parseFloat(input.value);
                 if (val > 0) {
                     finalBasket.push({
+                        date: dateVal, // <-- Сохраняем дату прямо в товар
                         block: block,
                         floor: floor,
                         name: input.getAttribute('data-name'),
@@ -220,10 +223,11 @@
             const container = document.getElementById('summary-container');
             container.innerHTML = '<b>К отправке:</b><br>';
             finalBasket.forEach((item, index) => {
+                // Добавили отображение даты в корзине, чтобы было понятно
                 container.innerHTML += `
                     <div class="summary-item">
                         <span class="remove-btn" onclick="removeItem(${index})">✖</span>
-                        <b>Блок ${item.block}, эт. ${item.floor}:</b><br>${item.name} — ${item.value}
+                        <b>📅 ${item.date} | Блок ${item.block}, эт. ${item.floor}:</b><br>${item.name} — ${item.value}
                     </div>`;
             });
             const btn = document.getElementById('submit-btn');
@@ -238,8 +242,8 @@
 
         function sendToBot() {
             const data = {
-                date: document.getElementById('report-date').value,
-                items: finalBasket
+                // Теперь отправляем только корзину, даты уже внутри каждого элемента
+                items: finalBasket 
             };
             tg.sendData(JSON.stringify(data));
         }
