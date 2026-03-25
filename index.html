@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        :root { --primary: #28a745; --bg: #f4f4f9; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); color: #333; margin: 0; padding: 0; }
+        :root { --primary: #28a745; --bg: #f4f4f9; --text: #333; }
+        body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
         
         /* Вкладки */
         .tabs { display: flex; background: #fff; border-bottom: 1px solid #ddd; position: sticky; top: 0; z-index: 100; }
@@ -16,30 +16,31 @@
         .page { display: none; padding: 15px; padding-bottom: 100px; }
         .page.active { display: block; }
 
-        /* Элементы интерфейса */
         .card { background: #fff; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 15px; }
-        h4 { margin: 0 0 10px 0; color: var(--primary); }
-        label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 5px; opacity: 0.7; }
-        select, input { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ddd; font-size: 16px; box-sizing: border-box; }
+        label { display: block; font-size: 11px; font-weight: bold; margin-bottom: 5px; text-transform: uppercase; opacity: 0.6; }
+        select, input { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ddd; font-size: 16px; box-sizing: border-box; -webkit-appearance: none; }
 
-        /* Списки работ */
-        .work-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
-        .work-name { flex: 1; font-size: 14px; padding-right: 10px; }
-        .work-input { width: 80px; text-align: center; border: 1px solid var(--primary); margin-bottom: 0; }
+        /* Список работ */
+        .work-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee; }
+        .work-info { flex: 1; font-size: 14px; padding-right: 10px; line-height: 1.3; }
+        .work-info small { color: var(--primary); font-weight: bold; }
+        .work-input { width: 80px; text-align: center; border: 1px solid var(--primary); margin-bottom: 0; padding: 8px; border-radius: 6px; }
 
         /* Кнопки */
-        .btn { width: 100%; padding: 15px; border-radius: 10px; border: none; font-weight: bold; font-size: 16px; cursor: pointer; }
+        .btn { width: 100%; padding: 15px; border-radius: 10px; border: none; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.2s; }
         .btn-add { background: var(--primary); color: #fff; }
-        .btn-save { background: #6c757d; color: #fff; margin-top: 5px; }
-        .btn-send { background: #007bff; color: #fff; position: fixed; bottom: 15px; left: 15px; width: calc(100% - 30px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .btn-add:active { transform: scale(0.98); opacity: 0.9; }
+        .btn-save { background: #6c757d; color: #fff; }
+        .btn-send { background: #007bff; color: #fff; position: fixed; bottom: 15px; left: 15px; width: calc(100% - 30px); box-shadow: 0 4px 15px rgba(0,123,255,0.3); z-index: 999; }
 
-        /* База данных (таблица) */
-        .db-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        .db-table th { text-align: left; background: #eee; padding: 8px; }
-        .db-table td { padding: 8px; border-bottom: 1px solid #eee; }
+        /* База данных */
+        .db-item { display: flex; justify-content: space-between; padding: 10px; background: #fff; border-radius: 8px; margin-bottom: 5px; border: 1px solid #eee; font-size: 13px; }
+        .db-unit { color: var(--primary); font-weight: bold; }
 
-        .summary-item { font-size: 12px; padding: 8px; border-left: 4px solid var(--primary); background: #f9f9f9; margin-bottom: 5px; position: relative; }
-        .remove { color: red; float: right; font-weight: bold; }
+        .summary-item { font-size: 12px; padding: 10px; border-left: 4px solid var(--primary); background: #fff; margin-bottom: 8px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .remove { color: #ff4d4d; float: right; font-weight: bold; padding-left: 10px; }
+        
+        .empty-hint { text-align: center; opacity: 0.5; padding: 20px; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -51,89 +52,80 @@
 
     <div id="report-page" class="page active">
         <div class="card">
-            <label>Дата</label>
-            <input type="date" id="rep-date">
             <div style="display:flex; gap:10px;">
+                <div style="flex:1.5;"><label>Дата</label><input type="date" id="rep-date"></div>
                 <div style="flex:1;"><label>Блок</label><select id="rep-block"></select></div>
                 <div style="flex:1;"><label>Этаж</label><select id="rep-floor"></select></div>
             </div>
         </div>
 
         <div class="card">
-            <label>Выбрать категорию работ:</label>
-            <select id="cat-select" onchange="renderWorkList()"></select>
-            <div id="work-list"></div>
-            <button class="btn btn-add" id="add-to-basket-btn" style="display:none;" onclick="addToBasket()">➕ Добавить в список</button>
+            <label>Категория работ</label>
+            <select id="cat-select" onchange="renderWorkList()">
+                <option value="">-- Выберите --</option>
+                <option value="Электромонтаж">Электромонтаж</option>
+                <option value="Механика">Механика</option>
+                <option value="Строительство">Строительство</option>
+            </select>
+            <div id="work-list">
+                <div class="empty-hint">Выберите категорию, чтобы увидеть список работ</div>
+            </div>
+            <button class="btn btn-add" id="add-to-basket-btn" style="display:none; margin-top:15px;" onclick="addToBasket()">➕ Добавить объемы в список</button>
         </div>
 
         <div id="basket-view"></div>
-        <button class="btn btn-send" id="send-btn" style="display:none;" onclick="sendData()">🚀 Отправить отчет (0)</button>
+        <button class="btn btn-send" id="send-btn" style="display:none;" onclick="sendData()">🚀 Отправить (0)</button>
     </div>
 
     <div id="db-page" class="page">
         <div class="card">
-            <h4>➕ Добавить новую работу</h4>
+            <h4>➕ Добавить новую позицию</h4>
             <label>Категория</label>
             <select id="new-cat">
-                <option value="Строительство">Строительство</option>
                 <option value="Электромонтаж">Электромонтаж</option>
                 <option value="Механика">Механика</option>
+                <option value="Строительство">Строительство</option>
             </select>
-            <label>Название (напр: Покраска стен)</label>
-            <input type="text" id="new-name">
+            <label>Название работы</label>
+            <input type="text" id="new-name" placeholder="Напр: Монтаж лотка 200мм">
             <label>Единица измерения</label>
             <select id="new-unit">
-                <option value="м">м</option><option value="шт">шт</option>
-                <option value="м2">м2</option><option value="м3">м3</option>
-                <option value="кг">кг</option><option value="т">т</option>
+                <option value="м">м (погонный метр)</option>
+                <option value="шт">шт (штука)</option>
+                <option value="м2">м2 (квадратный метр)</option>
+                <option value="м3">м3 (куб)</option>
+                <option value="кг">кг</option>
+                <option value="т">т</option>
             </select>
             <button class="btn btn-save" onclick="saveNewWork()">💾 Сохранить в справочник</button>
         </div>
 
-        <div class="card">
-            <h4>Весь справочник</h4>
-            <table class="db-table">
-                <thead>
-                    <tr><th>Категория</th><th>Работа</th><th>Ед.</th></tr>
-                </thead>
-                <tbody id="db-table-body"></tbody>
-            </table>
-        </div>
+        <div id="full-db-view"></div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
+        tg.ready();
+        
         document.getElementById('rep-date').valueAsDate = new Date();
 
-        // Основной справочник (сохраняется в localStorage телефона)
-        let workDB = JSON.parse(localStorage.getItem('gik_works')) || [
-            {cat: "Строительство", name: "Газоблок 200", unit: "шт"},
-            {cat: "Электромонтаж", name: "Кабель 3х1.5", unit: "м"},
-            {cat: "Механика", name: "Труба ППР 20", unit: "м"}
-        ];
-
+        // Загружаем справочник из памяти телефона
+        let workDB = JSON.parse(localStorage.getItem('gik_works')) || [];
         let basket = [];
 
-        // Инициализация интерфейса
         function init() {
             // Блоки
             const bSel = document.getElementById('rep-block');
             [17,18,22,23,24,25,26,27,28,29].forEach(b => bSel.innerHTML += `<option value="${b}">${b}</option>`);
+            
             // Этажи
             const fSel = document.getElementById('rep-floor');
             fSel.innerHTML += `<option value="Крыша">Крыша</option>`;
-            for(let i=24; i>=1; i--) fSel.innerHTML += `<option value="${i}">${i} эт.</option>`;
-            // Категории
-            updateCatSelect();
-            renderDBTable();
-        }
+            for(let i=24; i>=1; i--) fSel.innerHTML += `<option value="${i}">${i}</option>`;
+            fSel.innerHTML += `<option value="-1">-1</option><option value="-2">-2</option>`;
 
-        function updateCatSelect() {
-            const s = document.getElementById('cat-select');
-            const cats = [...new Set(workDB.map(x => x.cat))];
-            s.innerHTML = '<option value="">-- Выберите категорию --</option>';
-            cats.forEach(c => s.innerHTML += `<option value="${c}">${c}</option>`);
+            renderDBList();
         }
 
         function switchTab(id) {
@@ -141,19 +133,31 @@
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.getElementById(id).classList.add('active');
             event.currentTarget.classList.add('active');
+            if(id === 'db-page') renderDBList();
         }
 
         function renderWorkList() {
             const cat = document.getElementById('cat-select').value;
             const container = document.getElementById('work-list');
             container.innerHTML = '';
-            if(!cat) { document.getElementById('add-to-basket-btn').style.display = 'none'; return; }
+            
+            const filtered = workDB.filter(x => x.cat === cat);
+            
+            if(filtered.length === 0) {
+                container.innerHTML = '<div class="empty-hint">В этой категории пока нет работ. Добавьте их во вкладке "База".</div>';
+                document.getElementById('add-to-basket-btn').style.display = 'none';
+                return;
+            }
 
-            workDB.filter(x => x.cat === cat).forEach(w => {
+            filtered.forEach(w => {
                 container.innerHTML += `
                     <div class="work-row">
-                        <div class="work-name">${w.name} (${w.unit})</div>
-                        <input type="number" inputmode="decimal" class="work-input" data-name="${w.name}" data-unit="${w.unit}" placeholder="0">
+                        <div class="work-info">
+                            ${w.name}<br>
+                            <small>${w.unit}</small>
+                        </div>
+                        <input type="number" inputmode="decimal" class="work-input" 
+                               data-name="${w.name}" data-unit="${w.unit}" placeholder="0">
                     </div>`;
             });
             document.getElementById('add-to-basket-btn').style.display = 'block';
@@ -164,6 +168,7 @@
             const block = document.getElementById('rep-block').value;
             const floor = document.getElementById('rep-floor').value;
             const inputs = document.querySelectorAll('.work-input');
+            let added = false;
             
             inputs.forEach(input => {
                 const val = parseFloat(input.value);
@@ -173,51 +178,77 @@
                         name: input.dataset.name, value: val, unit: input.dataset.unit
                     });
                     input.value = '';
+                    added = true;
                 }
             });
-            updateBasketUI();
-            tg.HapticFeedback.impactOccurred('light');
+
+            if(added) {
+                updateBasketUI();
+                tg.HapticFeedback.impactOccurred('medium');
+            } else {
+                tg.showAlert("Введите объем хотя бы для одной работы!");
+            }
         }
 
         function updateBasketUI() {
             const view = document.getElementById('basket-view');
-            view.innerHTML = basket.length > 0 ? '<h4>В списке на отправку:</h4>' : '';
+            view.innerHTML = basket.length > 0 ? '<h4 style="margin:15px 0 10px 5px">Готово к отправке:</h4>' : '';
+            
             basket.forEach((item, i) => {
                 view.innerHTML += `
                     <div class="summary-item">
                         <span class="remove" onclick="removeBasket(${i})">✖</span>
-                        <b>Бл.${item.block}, эт.${item.floor}</b> | ${item.name}: ${item.value} ${item.unit}
+                        <b>Блок ${item.block}, ${item.floor} эт.</b><br>
+                        ${item.name}: ${item.value} ${item.unit}
                     </div>`;
             });
+
             const btn = document.getElementById('send-btn');
             btn.style.display = basket.length > 0 ? 'block' : 'none';
             btn.innerText = `🚀 Отправить отчет (${basket.length})`;
         }
 
-        function removeBasket(i) { basket.splice(i,1); updateBasketUI(); }
+        function removeBasket(i) {
+            basket.splice(i, 1);
+            updateBasketUI();
+        }
 
-        // Работа со справочником
+        // Логика справочника
         function saveNewWork() {
             const cat = document.getElementById('new-cat').value;
             const name = document.getElementById('new-name').value.trim();
             const unit = document.getElementById('new-unit').value;
 
-            if(!name) return tg.showAlert("Введите название работы!");
+            if(!name) return tg.showAlert("Введите название!");
             
             workDB.push({cat, name, unit});
             localStorage.setItem('gik_works', JSON.stringify(workDB));
             
             document.getElementById('new-name').value = '';
-            updateCatSelect();
-            renderDBTable();
-            tg.showAlert("Работа добавлена в базу!");
+            tg.showAlert("Работа добавлена в ваш список!");
+            renderDBList();
         }
 
-        function renderDBTable() {
-            const body = document.getElementById('db-table-body');
-            body.innerHTML = '';
-            workDB.forEach(w => {
-                body.innerHTML += `<tr><td>${w.cat}</td><td>${w.name}</td><td>${w.unit}</td></tr>`;
+        function renderDBList() {
+            const container = document.getElementById('full-db-view');
+            container.innerHTML = '<h4>Ваш справочник:</h4>';
+            
+            if(workDB.length === 0) {
+                container.innerHTML += '<div class="empty-hint">Справочник пуст</div>';
+                return;
+            }
+
+            // Группировка по категориям для красоты
+            const cats = [...new Set(workDB.map(x => x.cat))];
+            cats.forEach(c => {
+                container.innerHTML += `<div style="font-weight:bold; margin: 15px 0 5px; font-size:12px; opacity:0.6">${c}</div>`;
+                workDB.filter(x => x.cat === c).forEach(w => {
+                    container.innerHTML += `
+                        <div class="db-item">
+                            <span>${w.name}</span>
+                            <span class="db-unit">${w.unit}</span>
+                        </div>`;
+                });
             });
         }
 
