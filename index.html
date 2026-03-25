@@ -5,42 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        :root { --primary: #28a745; --bg: #f4f4f9; --text: #333; }
-        body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
-        
-        /* Вкладки */
+        :root { --primary: #28a745; --bg: #f4f4f9; }
+        body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 0; }
         .tabs { display: flex; background: #fff; border-bottom: 1px solid #ddd; position: sticky; top: 0; z-index: 100; }
-        .tab { flex: 1; padding: 15px; text-align: center; font-weight: bold; color: #888; cursor: pointer; border-bottom: 3px solid transparent; }
-        .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
-        
+        .tab { flex: 1; padding: 15px; text-align: center; font-weight: bold; color: #888; cursor: pointer; }
+        .tab.active { color: var(--primary); border-bottom: 3px solid var(--primary); }
         .page { display: none; padding: 15px; padding-bottom: 100px; }
         .page.active { display: block; }
-
         .card { background: #fff; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 15px; }
-        label { display: block; font-size: 11px; font-weight: bold; margin-bottom: 5px; text-transform: uppercase; opacity: 0.6; }
-        select, input { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ddd; font-size: 16px; box-sizing: border-box; -webkit-appearance: none; }
-
-        /* Список работ */
-        .work-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee; }
-        .work-info { flex: 1; font-size: 14px; padding-right: 10px; line-height: 1.3; }
-        .work-info small { color: var(--primary); font-weight: bold; }
-        .work-input { width: 80px; text-align: center; border: 1px solid var(--primary); margin-bottom: 0; padding: 8px; border-radius: 6px; }
-
-        /* Кнопки */
-        .btn { width: 100%; padding: 15px; border-radius: 10px; border: none; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.2s; }
+        select, input { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ddd; font-size: 16px; box-sizing: border-box; }
+        .work-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .work-input { width: 80px; text-align: center; border: 1px solid var(--primary); padding: 8px; border-radius: 6px; }
+        .btn { width: 100%; padding: 15px; border-radius: 10px; border: none; font-weight: bold; font-size: 16px; cursor: pointer; }
         .btn-add { background: var(--primary); color: #fff; }
-        .btn-add:active { transform: scale(0.98); opacity: 0.9; }
-        .btn-save { background: #6c757d; color: #fff; }
-        .btn-send { background: #007bff; color: #fff; position: fixed; bottom: 15px; left: 15px; width: calc(100% - 30px); box-shadow: 0 4px 15px rgba(0,123,255,0.3); z-index: 999; }
-
-        /* База данных */
-        .db-item { display: flex; justify-content: space-between; padding: 10px; background: #fff; border-radius: 8px; margin-bottom: 5px; border: 1px solid #eee; font-size: 13px; }
-        .db-unit { color: var(--primary); font-weight: bold; }
-
-        .summary-item { font-size: 12px; padding: 10px; border-left: 4px solid var(--primary); background: #fff; margin-bottom: 8px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-        .remove { color: #ff4d4d; float: right; font-weight: bold; padding-left: 10px; }
-        
-        .empty-hint { text-align: center; opacity: 0.5; padding: 20px; font-size: 14px; }
+        .btn-send { background: #007bff; color: #fff; position: fixed; bottom: 15px; left: 15px; width: calc(100% - 30px); }
+        .db-item { display: flex; justify-content: space-between; padding: 8px; background: #fff; border-radius: 5px; margin-bottom: 4px; border: 1px solid #eee; font-size: 13px; }
     </style>
 </head>
 <body>
@@ -53,78 +32,65 @@
     <div id="report-page" class="page active">
         <div class="card">
             <div style="display:flex; gap:10px;">
-                <div style="flex:1.5;"><label>Дата</label><input type="date" id="rep-date"></div>
                 <div style="flex:1;"><label>Блок</label><select id="rep-block"></select></div>
                 <div style="flex:1;"><label>Этаж</label><select id="rep-floor"></select></div>
             </div>
-        </div>
-
-        <div class="card">
-            <label>Категория работ</label>
+            <label>Категория</label>
             <select id="cat-select" onchange="renderWorkList()">
-                <option value="">-- Выберите --</option>
+                <option value="">-- Выберите категорию --</option>
                 <option value="Электромонтаж">Электромонтаж</option>
                 <option value="Механика">Механика</option>
                 <option value="Строительство">Строительство</option>
             </select>
-            <div id="work-list">
-                <div class="empty-hint">Выберите категорию, чтобы увидеть список работ</div>
-            </div>
-            <button class="btn btn-add" id="add-to-basket-btn" style="display:none; margin-top:15px;" onclick="addToBasket()">➕ Добавить объемы в список</button>
         </div>
-
+        <div id="work-list"></div>
+        <button class="btn btn-add" id="add-btn" style="display:none;" onclick="addToBasket()">➕ В корзину</button>
         <div id="basket-view"></div>
         <button class="btn btn-send" id="send-btn" style="display:none;" onclick="sendData()">🚀 Отправить (0)</button>
     </div>
 
     <div id="db-page" class="page">
         <div class="card">
-            <h4>➕ Добавить новую позицию</h4>
-            <label>Категория</label>
+            <h4>➕ Новая работа</h4>
             <select id="new-cat">
                 <option value="Электромонтаж">Электромонтаж</option>
                 <option value="Механика">Механика</option>
                 <option value="Строительство">Строительство</option>
             </select>
-            <label>Название работы</label>
-            <input type="text" id="new-name" placeholder="Напр: Монтаж лотка 200мм">
-            <label>Единица измерения</label>
-            <select id="new-unit">
-                <option value="м">м (погонный метр)</option>
-                <option value="шт">шт (штука)</option>
-                <option value="м2">м2 (квадратный метр)</option>
-                <option value="м3">м3 (куб)</option>
-                <option value="кг">кг</option>
-                <option value="т">т</option>
-            </select>
-            <button class="btn btn-save" onclick="saveNewWork()">💾 Сохранить в справочник</button>
+            <input type="text" id="new-name" placeholder="Название">
+            <input type="text" id="new-unit" placeholder="Ед.изм (м, шт, м2)">
+            <button class="btn" style="background:#6c757d; color:#fff;" onclick="saveNewWork()">💾 Сохранить</button>
         </div>
-
         <div id="full-db-view"></div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        tg.ready();
-        
-        document.getElementById('rep-date').valueAsDate = new Date();
 
-        // Загружаем справочник из памяти телефона
-        let workDB = JSON.parse(localStorage.getItem('gik_works')) || [];
+        // Начальный список (если память пуста)
+        const initialWorks = [
+            {cat: "Электромонтаж", name: "Монтаж кабеля 3х1.5", unit: "м"},
+            {cat: "Механика", name: "Труба ППР 20", unit: "м"},
+            {cat: "Строительство", name: "Газоблок 200", unit: "шт"}
+            // Сюда можно добавить еще 200 позиций, но для теста оставим эти
+        ];
+
+        let workDB = JSON.parse(localStorage.getItem('gik_works_v3'));
+        
+        // Если в памяти ничего нет — берем начальный список
+        if (!workDB || workDB.length === 0) {
+            workDB = initialWorks;
+            localStorage.setItem('gik_works_v3', JSON.stringify(workDB));
+        }
+
         let basket = [];
 
         function init() {
-            // Блоки
             const bSel = document.getElementById('rep-block');
             [17,18,22,23,24,25,26,27,28,29].forEach(b => bSel.innerHTML += `<option value="${b}">${b}</option>`);
-            
-            // Этажи
             const fSel = document.getElementById('rep-floor');
-            fSel.innerHTML += `<option value="Крыша">Крыша</option>`;
             for(let i=24; i>=1; i--) fSel.innerHTML += `<option value="${i}">${i}</option>`;
-            fSel.innerHTML += `<option value="-1">-1</option><option value="-2">-2</option>`;
-
             renderDBList();
         }
 
@@ -133,128 +99,80 @@
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.getElementById(id).classList.add('active');
             event.currentTarget.classList.add('active');
-            if(id === 'db-page') renderDBList();
         }
 
         function renderWorkList() {
             const cat = document.getElementById('cat-select').value;
             const container = document.getElementById('work-list');
             container.innerHTML = '';
-            
             const filtered = workDB.filter(x => x.cat === cat);
             
             if(filtered.length === 0) {
-                container.innerHTML = '<div class="empty-hint">В этой категории пока нет работ. Добавьте их во вкладке "База".</div>';
-                document.getElementById('add-to-basket-btn').style.display = 'none';
+                container.innerHTML = '<div style="text-align:center; padding:20px; opacity:0.5;">Работ в этой категории пока нет. Добавьте их в "Базе".</div>';
+                document.getElementById('add-btn').style.display = 'none';
                 return;
             }
 
             filtered.forEach(w => {
                 container.innerHTML += `
-                    <div class="work-row">
-                        <div class="work-info">
-                            ${w.name}<br>
-                            <small>${w.unit}</small>
-                        </div>
-                        <input type="number" inputmode="decimal" class="work-input" 
-                               data-name="${w.name}" data-unit="${w.unit}" placeholder="0">
+                    <div class="card work-row">
+                        <div style="font-size:14px;">${w.name}<br><small style="color:green">${w.unit}</small></div>
+                        <input type="number" step="any" class="work-input" data-name="${w.name}" data-unit="${w.unit}" placeholder="0">
                     </div>`;
             });
-            document.getElementById('add-to-basket-btn').style.display = 'block';
+            document.getElementById('add-btn').style.display = 'block';
         }
 
         function addToBasket() {
-            const date = document.getElementById('rep-date').value;
             const block = document.getElementById('rep-block').value;
             const floor = document.getElementById('rep-floor').value;
+            const date = new Date().toISOString().split('T')[0];
             const inputs = document.querySelectorAll('.work-input');
-            let added = false;
             
             inputs.forEach(input => {
                 const val = parseFloat(input.value);
                 if(val > 0) {
-                    basket.push({
-                        date: date, block: block, floor: floor,
-                        name: input.dataset.name, value: val, unit: input.dataset.unit
-                    });
+                    basket.push({ date, block, floor, name: input.dataset.name, value: val, unit: input.dataset.unit });
                     input.value = '';
-                    added = true;
                 }
             });
-
-            if(added) {
-                updateBasketUI();
-                tg.HapticFeedback.impactOccurred('medium');
-            } else {
-                tg.showAlert("Введите объем хотя бы для одной работы!");
-            }
+            updateBasketUI();
+            tg.HapticFeedback.impactOccurred('medium');
         }
 
         function updateBasketUI() {
             const view = document.getElementById('basket-view');
-            view.innerHTML = basket.length > 0 ? '<h4 style="margin:15px 0 10px 5px">Готово к отправке:</h4>' : '';
-            
+            view.innerHTML = basket.length > 0 ? '<h4>В корзине:</h4>' : '';
             basket.forEach((item, i) => {
-                view.innerHTML += `
-                    <div class="summary-item">
-                        <span class="remove" onclick="removeBasket(${i})">✖</span>
-                        <b>Блок ${item.block}, ${item.floor} эт.</b><br>
-                        ${item.name}: ${item.value} ${item.unit}
-                    </div>`;
+                view.innerHTML += `<div class="card" style="font-size:12px;"><b>Бл.${item.block}, эт.${item.floor}</b> | ${item.name}: ${item.value} ${item.unit}</div>`;
             });
-
-            const btn = document.getElementById('send-btn');
-            btn.style.display = basket.length > 0 ? 'block' : 'none';
-            btn.innerText = `🚀 Отправить отчет (${basket.length})`;
+            document.getElementById('send-btn').style.display = basket.length > 0 ? 'block' : 'none';
+            document.getElementById('send-btn').innerText = `🚀 Отправить (${basket.length})`;
         }
 
-        function removeBasket(i) {
-            basket.splice(i, 1);
-            updateBasketUI();
-        }
-
-        // Логика справочника
         function saveNewWork() {
             const cat = document.getElementById('new-cat').value;
             const name = document.getElementById('new-name').value.trim();
-            const unit = document.getElementById('new-unit').value;
-
-            if(!name) return tg.showAlert("Введите название!");
+            const unit = document.getElementById('new-unit').value.trim();
+            if(!name || !unit) return tg.showAlert("Заполните все поля!");
             
             workDB.push({cat, name, unit});
-            localStorage.setItem('gik_works', JSON.stringify(workDB));
-            
+            localStorage.setItem('gik_works_v3', JSON.stringify(workDB));
             document.getElementById('new-name').value = '';
-            tg.showAlert("Работа добавлена в ваш список!");
+            document.getElementById('new-unit').value = '';
+            tg.showAlert("Добавлено!");
             renderDBList();
         }
 
         function renderDBList() {
             const container = document.getElementById('full-db-view');
-            container.innerHTML = '<h4>Ваш справочник:</h4>';
-            
-            if(workDB.length === 0) {
-                container.innerHTML += '<div class="empty-hint">Справочник пуст</div>';
-                return;
-            }
-
-            // Группировка по категориям для красоты
-            const cats = [...new Set(workDB.map(x => x.cat))];
-            cats.forEach(c => {
-                container.innerHTML += `<div style="font-weight:bold; margin: 15px 0 5px; font-size:12px; opacity:0.6">${c}</div>`;
-                workDB.filter(x => x.cat === c).forEach(w => {
-                    container.innerHTML += `
-                        <div class="db-item">
-                            <span>${w.name}</span>
-                            <span class="db-unit">${w.unit}</span>
-                        </div>`;
-                });
+            container.innerHTML = '<h4>Справочник:</h4>';
+            workDB.forEach(w => {
+                container.innerHTML += `<div class="db-item"><span>${w.name}</span><b>${w.unit}</b></div>`;
             });
         }
 
-        function sendData() {
-            tg.sendData(JSON.stringify({ items: basket }));
-        }
+        function sendData() { tg.sendData(JSON.stringify({ items: basket })); }
 
         init();
     </script>
