@@ -5,217 +5,227 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: sans-serif; padding: 15px; background-color: var(--tg-theme-bg-color); color: var(--tg-theme-text-color); }
-        h3 { margin-top: 0; text-align: center; }
-        select, input { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; box-sizing: border-box; background: #fff; }
+        :root { --primary: #28a745; --bg: #f4f4f9; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: #333; margin: 0; padding: 0; }
         
-        .meta-row { display: flex; gap: 10px; }
-        .meta-row > div { flex: 1; }
-        label { font-size: 12px; margin-bottom: 5px; display: block; opacity: 0.8; font-weight: bold; }
+        /* Вкладки */
+        .tabs { display: flex; background: #fff; border-bottom: 1px solid #ddd; position: sticky; top: 0; z-index: 100; }
+        .tab { flex: 1; padding: 15px; text-align: center; font-weight: bold; color: #888; cursor: pointer; border-bottom: 3px solid transparent; }
+        .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+        
+        .page { display: none; padding: 15px; padding-bottom: 100px; }
+        .page.active { display: block; }
 
-        .item-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
-        .item-name { flex: 1; padding-right: 10px; font-size: 14px; }
-        .item-input { width: 80px; margin-bottom: 0; text-align: center; border: 1px solid var(--tg-theme-button-color); }
-        
-        /* Стили корзины */
-        #summary-container { margin-top: 15px; border-top: 2px solid #eee; padding-top: 10px; }
-        .summary-item { 
-            background: rgba(0,0,0,0.05); padding: 10px; border-radius: 8px; 
-            margin-bottom: 8px; font-size: 13px; position: relative;
-            border-left: 5px solid var(--tg-theme-button-color);
-        }
-        .remove-btn { color: #ff4d4d; font-weight: bold; float: right; cursor: pointer; padding: 0 5px; }
+        /* Элементы интерфейса */
+        .card { background: #fff; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        h4 { margin: 0 0 10px 0; color: var(--primary); }
+        label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 5px; opacity: 0.7; }
+        select, input { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ddd; font-size: 16px; box-sizing: border-box; }
+
+        /* Списки работ */
+        .work-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .work-name { flex: 1; font-size: 14px; padding-right: 10px; }
+        .work-input { width: 80px; text-align: center; border: 1px solid var(--primary); margin-bottom: 0; }
 
         /* Кнопки */
-        .btn-green { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 8px; margin-bottom: 15px; font-weight: bold; cursor: pointer; }
-        #submit-btn { width: 100%; padding: 15px; background-color: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color); border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 10px; }
-        
-        /* Секция своей работы */
-        .custom-work-box { 
-            background: rgba(40, 167, 69, 0.1); 
-            padding: 15px; border-radius: 12px; border: 2px dashed #28a745; margin-top: 20px; margin-bottom: 20px;
-        }
-        .custom-work-box h4 { margin: 0 0 10px 0; color: #28a745; }
+        .btn { width: 100%; padding: 15px; border-radius: 10px; border: none; font-weight: bold; font-size: 16px; cursor: pointer; }
+        .btn-add { background: var(--primary); color: #fff; }
+        .btn-save { background: #6c757d; color: #fff; margin-top: 5px; }
+        .btn-send { background: #007bff; color: #fff; position: fixed; bottom: 15px; left: 15px; width: calc(100% - 30px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+
+        /* База данных (таблица) */
+        .db-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .db-table th { text-align: left; background: #eee; padding: 8px; }
+        .db-table td { padding: 8px; border-bottom: 1px solid #eee; }
+
+        .summary-item { font-size: 12px; padding: 8px; border-left: 4px solid var(--primary); background: #f9f9f9; margin-bottom: 5px; position: relative; }
+        .remove { color: red; float: right; font-weight: bold; }
     </style>
 </head>
 <body>
-    <h3>Сборный отчет ГИК</h3>
-    
-    <div class="meta-info">
-        <label>Дата</label>
-        <input type="date" id="report-date">
-        <div class="meta-row">
-            <div>
-                <label>Блок</label>
-                <select id="block-num">
-                    <option value="17">17</option><option value="18">18</option>
-                    <option value="22">22</option><option value="23">23</option>
-                    <option value="24">24</option><option value="25">25</option>
-                    <option value="26">26</option><option value="27">27</option>
-                    <option value="28">28</option><option value="29">29</option>
-                </select>
-            </div>
-            <div>
-                <label>Этаж</label>
-                <select id="floor-num">
-                    <option value="Крыша">Крыша</option>
-                    <script>for(let i=24;i>=1;i--) document.write(`<option value="${i}">${i} эт.</option>`);</script>
-                    <option value="-1">-1 эт.</option><option value="-2">-2 эт.</option>
-                </select>
+
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('report-page')">📝 Отчет</div>
+        <div class="tab" onclick="switchTab('db-page')">📊 База работ</div>
+    </div>
+
+    <div id="report-page" class="page active">
+        <div class="card">
+            <label>Дата</label>
+            <input type="date" id="rep-date">
+            <div style="display:flex; gap:10px;">
+                <div style="flex:1;"><label>Блок</label><select id="rep-block"></select></div>
+                <div style="flex:1;"><label>Этаж</label><select id="rep-floor"></select></div>
             </div>
         </div>
+
+        <div class="card">
+            <label>Выбрать категорию работ:</label>
+            <select id="cat-select" onchange="renderWorkList()"></select>
+            <div id="work-list"></div>
+            <button class="btn btn-add" id="add-to-basket-btn" style="display:none;" onclick="addToBasket()">➕ Добавить в список</button>
+        </div>
+
+        <div id="basket-view"></div>
+        <button class="btn btn-send" id="send-btn" style="display:none;" onclick="sendData()">🚀 Отправить отчет (0)</button>
     </div>
 
-    <hr style="border:0; border-top:1px solid #eee;">
+    <div id="db-page" class="page">
+        <div class="card">
+            <h4>➕ Добавить новую работу</h4>
+            <label>Категория</label>
+            <select id="new-cat">
+                <option value="Строительство">Строительство</option>
+                <option value="Электромонтаж">Электромонтаж</option>
+                <option value="Механика">Механика</option>
+            </select>
+            <label>Название (напр: Покраска стен)</label>
+            <input type="text" id="new-name">
+            <label>Единица измерения</label>
+            <select id="new-unit">
+                <option value="м">м</option><option value="шт">шт</option>
+                <option value="м2">м2</option><option value="м3">м3</option>
+                <option value="кг">кг</option><option value="т">т</option>
+            </select>
+            <button class="btn btn-save" onclick="saveNewWork()">💾 Сохранить в справочник</button>
+        </div>
 
-    <label>Выбрать из готового списка:</label>
-    <select id="section" onchange="loadCategories()">
-        <option value="">1. Выберите раздел...</option>
-        <option value="Стр">Строительство</option>
-        <option value="Эм">Электромонтаж</option>
-        <option value="Мех">Механика</option>
-    </select>
-    <select id="category" onchange="loadItems()" style="display:none;"></select>
-    
-    <div id="items-container"></div>
-    <button id="add-btn" class="btn-green" style="display:none;" onclick="addToBasket()">➕ Добавить выбранное</button>
-
-    <div class="custom-work-box">
-        <h4>✍️ Добавить новую работу</h4>
-        <label>Название работы (которой нет в списке)</label>
-        <input type="text" id="custom-name" placeholder="Например: Покраска дверей">
-        <label>Объем</label>
-        <input type="number" id="custom-value" step="any" inputmode="decimal" placeholder="0.00">
-        <button class="btn-green" style="background:#6c757d;" onclick="addCustomToBasket()">➕ Добавить свою работу</button>
+        <div class="card">
+            <h4>Весь справочник</h4>
+            <table class="db-table">
+                <thead>
+                    <tr><th>Категория</th><th>Работа</th><th>Ед.</th></tr>
+                </thead>
+                <tbody id="db-table-body"></tbody>
+            </table>
+        </div>
     </div>
-
-    <div id="summary-container"></div>
-    <button id="submit-btn" style="display:none;" onclick="sendToBot()">🚀 Отправить отчет (0)</button>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        document.getElementById('report-date').valueAsDate = new Date();
+        document.getElementById('rep-date').valueAsDate = new Date();
 
-        let finalBasket = []; 
+        // Основной справочник (сохраняется в localStorage телефона)
+        let workDB = JSON.parse(localStorage.getItem('gik_works')) || [
+            {cat: "Строительство", name: "Газоблок 200", unit: "шт"},
+            {cat: "Электромонтаж", name: "Кабель 3х1.5", unit: "м"},
+            {cat: "Механика", name: "Труба ППР 20", unit: "м"}
+        ];
 
-        const allData = {
-            "Стр": {
-                "Кладка": ["Газоблок 600*300*200 (шт)","Газоблок 600*300*100 (шт)"],
-                "Отделка": ["Штукатурка стен (м2)", "Стяжка пола (м2)"]
-            },
-            "Эм": {
-                "Кабель": ["Монтаж Кабель 3х1,5 (м)", "Монтаж Кабель 3х2,5 (м)"],
-                "Щиты": ["Установка ЩК (шт)", "Установка ЩЭ (шт)"]
-            },
-            "Мех": {
-                "Трубы": ["Монтаж трубы ППР 20 (м)", "Монтаж трубы ППР 25 (м)"]
-            }
-        };
+        let basket = [];
 
-        function loadCategories() {
-            const section = document.getElementById('section').value;
-            const cat = document.getElementById('category');
-            document.getElementById('items-container').innerHTML = '';
-            if(!section) { cat.style.display='none'; return; }
-            cat.innerHTML = '<option value="">2. Выберите категорию...</option>';
-            for(let c in allData[section]) cat.innerHTML += `<option value="${c}">${c}</option>`;
-            cat.style.display = 'block';
+        // Инициализация интерфейса
+        function init() {
+            // Блоки
+            const bSel = document.getElementById('rep-block');
+            [17,18,22,23,24,25,26,27,28,29].forEach(b => bSel.innerHTML += `<option value="${b}">${b}</option>`);
+            // Этажи
+            const fSel = document.getElementById('rep-floor');
+            fSel.innerHTML += `<option value="Крыша">Крыша</option>`;
+            for(let i=24; i>=1; i--) fSel.innerHTML += `<option value="${i}">${i} эт.</option>`;
+            // Категории
+            updateCatSelect();
+            renderDBTable();
         }
 
-        function loadItems() {
-            const section = document.getElementById('section').value;
-            const category = document.getElementById('category').value;
-            const div = document.getElementById('items-container');
-            div.innerHTML = '';
-            if(!category) { document.getElementById('add-btn').style.display='none'; return; }
-            
-            allData[section][category].forEach((item) => {
-                div.innerHTML += `
-                    <div class="item-row">
-                        <div class="item-name">${item}</div>
-                        <input type="number" inputmode="decimal" step="any" class="item-input" data-name="${item}" placeholder="0">
+        function updateCatSelect() {
+            const s = document.getElementById('cat-select');
+            const cats = [...new Set(workDB.map(x => x.cat))];
+            s.innerHTML = '<option value="">-- Выберите категорию --</option>';
+            cats.forEach(c => s.innerHTML += `<option value="${c}">${c}</option>`);
+        }
+
+        function switchTab(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        function renderWorkList() {
+            const cat = document.getElementById('cat-select').value;
+            const container = document.getElementById('work-list');
+            container.innerHTML = '';
+            if(!cat) { document.getElementById('add-to-basket-btn').style.display = 'none'; return; }
+
+            workDB.filter(x => x.cat === cat).forEach(w => {
+                container.innerHTML += `
+                    <div class="work-row">
+                        <div class="work-name">${w.name} (${w.unit})</div>
+                        <input type="number" inputmode="decimal" class="work-input" data-name="${w.name}" data-unit="${w.unit}" placeholder="0">
                     </div>`;
             });
-            document.getElementById('add-btn').style.display = 'block';
+            document.getElementById('add-to-basket-btn').style.display = 'block';
         }
 
-        // Добавление из списка
         function addToBasket() {
-            const dateVal = document.getElementById('report-date').value; 
-            const block = document.getElementById('block-num').value;
-            const floor = document.getElementById('floor-num').value;
-            const inputs = document.querySelectorAll('.item-input');
-            let hasData = false;
-
+            const date = document.getElementById('rep-date').value;
+            const block = document.getElementById('rep-block').value;
+            const floor = document.getElementById('rep-floor').value;
+            const inputs = document.querySelectorAll('.work-input');
+            
             inputs.forEach(input => {
                 const val = parseFloat(input.value);
-                if (val > 0) {
-                    finalBasket.push({
-                        date: dateVal, block: block, floor: floor,
-                        name: input.getAttribute('data-name'), value: val
+                if(val > 0) {
+                    basket.push({
+                        date: date, block: block, floor: floor,
+                        name: input.dataset.name, value: val, unit: input.dataset.unit
                     });
-                    input.value = ''; 
-                    hasData = true;
+                    input.value = '';
                 }
             });
-
-            if(hasData) {
-                renderSummary();
-                tg.HapticFeedback.impactOccurred('medium');
-            }
+            updateBasketUI();
+            tg.HapticFeedback.impactOccurred('light');
         }
 
-        // ФУНКЦИЯ ДЛЯ НОВОЙ (СВОЕЙ) РАБОТЫ
-        function addCustomToBasket() {
-            const dateVal = document.getElementById('report-date').value;
-            const block = document.getElementById('block-num').value;
-            const floor = document.getElementById('floor-num').value;
-            const nameInput = document.getElementById('custom-name');
-            const valueInput = document.getElementById('custom-value');
-            
-            const name = nameInput.value.trim();
-            const val = parseFloat(valueInput.value);
-
-            if (name && val > 0) {
-                finalBasket.push({
-                    date: dateVal, block: block, floor: floor,
-                    name: "📌 " + name, // Пометка, что работа добавлена вручную
-                    value: val
-                });
-                nameInput.value = '';
-                valueInput.value = '';
-                renderSummary();
-                tg.HapticFeedback.impactOccurred('medium');
-            } else {
-                tg.showAlert("Введите название и объем!");
-            }
-        }
-
-        function renderSummary() {
-            const container = document.getElementById('summary-container');
-            container.innerHTML = '<b>Список к отправке:</b><br>';
-            finalBasket.forEach((item, index) => {
-                container.innerHTML += `
+        function updateBasketUI() {
+            const view = document.getElementById('basket-view');
+            view.innerHTML = basket.length > 0 ? '<h4>В списке на отправку:</h4>' : '';
+            basket.forEach((item, i) => {
+                view.innerHTML += `
                     <div class="summary-item">
-                        <span class="remove-btn" onclick="removeItem(${index})">✖</span>
-                        <b>${item.date} | Бл. ${item.block}, эт. ${item.floor}</b><br>
-                        ${item.name}: ${item.value}
+                        <span class="remove" onclick="removeBasket(${i})">✖</span>
+                        <b>Бл.${item.block}, эт.${item.floor}</b> | ${item.name}: ${item.value} ${item.unit}
                     </div>`;
             });
-            const btn = document.getElementById('submit-btn');
-            btn.style.display = finalBasket.length > 0 ? 'block' : 'none';
-            btn.innerText = `🚀 Отправить отчет (${finalBasket.length})`;
+            const btn = document.getElementById('send-btn');
+            btn.style.display = basket.length > 0 ? 'block' : 'none';
+            btn.innerText = `🚀 Отправить отчет (${basket.length})`;
         }
 
-        function removeItem(index) {
-            finalBasket.splice(index, 1);
-            renderSummary();
+        function removeBasket(i) { basket.splice(i,1); updateBasketUI(); }
+
+        // Работа со справочником
+        function saveNewWork() {
+            const cat = document.getElementById('new-cat').value;
+            const name = document.getElementById('new-name').value.trim();
+            const unit = document.getElementById('new-unit').value;
+
+            if(!name) return tg.showAlert("Введите название работы!");
+            
+            workDB.push({cat, name, unit});
+            localStorage.setItem('gik_works', JSON.stringify(workDB));
+            
+            document.getElementById('new-name').value = '';
+            updateCatSelect();
+            renderDBTable();
+            tg.showAlert("Работа добавлена в базу!");
         }
 
-        function sendToBot() {
-            tg.sendData(JSON.stringify({ items: finalBasket }));
+        function renderDBTable() {
+            const body = document.getElementById('db-table-body');
+            body.innerHTML = '';
+            workDB.forEach(w => {
+                body.innerHTML += `<tr><td>${w.cat}</td><td>${w.name}</td><td>${w.unit}</td></tr>`;
+            });
         }
+
+        function sendData() {
+            tg.sendData(JSON.stringify({ items: basket }));
+        }
+
+        init();
     </script>
 </body>
 </html>
