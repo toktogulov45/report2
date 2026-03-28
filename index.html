@@ -5,176 +5,249 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        :root { --primary: #28a745; --bg: #f4f4f9; }
-        body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 0; }
-        .tabs { display: flex; background: #fff; border-bottom: 1px solid #ddd; position: sticky; top: 0; z-index: 100; }
-        .tab { flex: 1; padding: 15px; text-align: center; font-weight: bold; color: #888; cursor: pointer; }
-        .tab.active { color: var(--primary); border-bottom: 3px solid var(--primary); }
-        .page { display: none; padding: 15px; padding-bottom: 100px; }
-        .page.active { display: block; }
-        .card { background: #fff; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 15px; }
-        select, input { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ddd; font-size: 16px; box-sizing: border-box; }
-        .work-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
-        .work-input { width: 80px; text-align: center; border: 1px solid var(--primary); padding: 8px; border-radius: 6px; }
-        .btn { width: 100%; padding: 15px; border-radius: 10px; border: none; font-weight: bold; font-size: 16px; cursor: pointer; }
-        .btn-add { background: var(--primary); color: #fff; }
-        .btn-send { background: #007bff; color: #fff; position: fixed; bottom: 15px; left: 15px; width: calc(100% - 30px); }
-        .db-item { display: flex; justify-content: space-between; padding: 8px; background: #fff; border-radius: 5px; margin-bottom: 4px; border: 1px solid #eee; font-size: 13px; }
+        body { font-family: sans-serif; padding: 15px; background-color: var(--tg-theme-bg-color); color: var(--tg-theme-text-color); }
+        h3 { margin-top: 0; text-align: center; }
+        select, input { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; box-sizing: border-box; background: #fff; }
+        
+        .meta-row { display: flex; gap: 10px; }
+        .meta-row > div { flex: 1; }
+        label { font-size: 12px; margin-bottom: 5px; display: block; opacity: 0.8; font-weight: bold; }
+
+        .item-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+        .item-name { flex: 1; padding-right: 10px; font-size: 14px; }
+        .item-input { width: 80px; margin-bottom: 0; text-align: center; border: 1px solid var(--tg-theme-button-color); }
+        
+        /* Стили корзины */
+        #summary-container { margin-top: 15px; border-top: 2px solid #eee; padding-top: 10px; }
+        .summary-item { 
+            background: rgba(0,0,0,0.05); padding: 10px; border-radius: 8px; 
+            margin-bottom: 8px; font-size: 13px; position: relative;
+            border-left: 5px solid var(--tg-theme-button-color);
+        }
+        .remove-btn { color: #ff4d4d; font-weight: bold; float: right; cursor: pointer; padding: 0 5px; }
+
+        #add-btn { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 8px; margin-bottom: 15px; font-weight: bold; }
+        #submit-btn { width: 100%; padding: 15px; background-color: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color); border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 10px; }
     </style>
 </head>
 <body>
-
-    <div class="tabs">
-        <div class="tab active" onclick="switchTab('report-page')">📝 Отчет</div>
-        <div class="tab" onclick="switchTab('db-page')">📊 База работ</div>
-    </div>
-
-    <div id="report-page" class="page active">
-        <div class="card">
-            <div style="display:flex; gap:10px;">
-                <div style="flex:1;"><label>Блок</label><select id="rep-block"></select></div>
-                <div style="flex:1;"><label>Этаж</label><select id="rep-floor"></select></div>
+    <h3>Сборный отчет ГИК</h3>
+    
+    <div class="meta-info">
+        <label>Дата</label>
+        <input type="date" id="report-date">
+        <div class="meta-row">
+            <div>
+                <label>Блок</label>
+                <select id="block-num">
+                    <option value="17">17</option>
+                    <option value="18">18</option>
+                    <option value="22">22</option>
+                    <option value="23">23</option>
+                    <option value="24">24</option>
+                    <option value="25">25</option>
+                    <option value="26">26</option>
+                    <option value="27">27</option>
+                    <option value="28">28</option>
+                    <option value="29">29</option>
+                </select>
             </div>
-            <label>Категория</label>
-            <select id="cat-select" onchange="renderWorkList()">
-                <option value="">-- Выберите категорию --</option>
-                <option value="Электромонтаж">Электромонтаж</option>
-                <option value="Механика">Механика</option>
-                <option value="Строительство">Строительство</option>
-            </select>
+            <div>
+                <label>Этаж</label>
+                <select id="floor-num">
+                    <option value="Крыша">Крыша</option>
+                    <script>for(let i=24;i>=1;i--) document.write(`<option value="${i}">${i} эт.</option>`);</script>
+                    <option value="-1">-1 эт.</option><option value="-2">-2 эт.</option>
+                </select>
+            </div>
         </div>
-        <div id="work-list"></div>
-        <button class="btn btn-add" id="add-btn" style="display:none;" onclick="addToBasket()">➕ В корзину</button>
-        <div id="basket-view"></div>
-        <button class="btn btn-send" id="send-btn" style="display:none;" onclick="sendData()">🚀 Отправить (0)</button>
     </div>
 
-    <div id="db-page" class="page">
-        <div class="card">
-            <h4>➕ Новая работа</h4>
-            <select id="new-cat">
-                <option value="Электромонтаж">Электромонтаж</option>
-                <option value="Механика">Механика</option>
-                <option value="Строительство">Строительство</option>
-            </select>
-            <input type="text" id="new-name" placeholder="Название">
-            <input type="text" id="new-unit" placeholder="Ед.изм (м, шт, м2)">
-            <button class="btn" style="background:#6c757d; color:#fff;" onclick="saveNewWork()">💾 Сохранить</button>
-        </div>
-        <div id="full-db-view"></div>
-    </div>
+    <hr style="border:0; border-top:1px solid #eee;">
+
+    <select id="section" onchange="loadCategories()">
+        <option value="">1. Выберите раздел...</option>
+        <option value="Стр">Строительство</option>
+        <option value="Эм">Электромонтаж</option>
+        <option value="Мех">Механика</option>
+    </select>
+    <select id="category" onchange="loadItems()" style="display:none;"></select>
+    
+    <div id="items-container"></div>
+    <button id="add-btn" style="display:none;" onclick="addToBasket()">➕ Добавить в список</button>
+
+    <div id="summary-container"></div>
+    <button id="submit-btn" style="display:none;" onclick="sendToBot()">🚀 Отправить Excel (0)</button>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
+        document.getElementById('report-date').valueAsDate = new Date();
 
-        // Начальный список (если память пуста)
-        const initialWorks = [
-            {cat: "Электромонтаж", name: "Монтаж кабеля 3х1.5", unit: "м"},
-            {cat: "Механика", name: "Труба ППР 20", unit: "м"},
-            {cat: "Строительство", name: "Газоблок 200", unit: "шт"}
-            // Сюда можно добавить еще 200 позиций, но для теста оставим эти
-        ];
+        let finalBasket = []; 
 
-        let workDB = JSON.parse(localStorage.getItem('gik_works_v3'));
-        
-        // Если в памяти ничего нет — берем начальный список
-        if (!workDB || workDB.length === 0) {
-            workDB = initialWorks;
-            localStorage.setItem('gik_works_v3', JSON.stringify(workDB));
-        }
-
-        let basket = [];
-
-        function init() {
-            const bSel = document.getElementById('rep-block');
-            [17,18,22,23,24,25,26,27,28,29].forEach(b => bSel.innerHTML += `<option value="${b}">${b}</option>`);
-            const fSel = document.getElementById('rep-floor');
-            for(let i=24; i>=1; i--) fSel.innerHTML += `<option value="${i}">${i}</option>`;
-            renderDBList();
-        }
-
-        function switchTab(id) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            event.currentTarget.classList.add('active');
-        }
-
-        function renderWorkList() {
-            const cat = document.getElementById('cat-select').value;
-            const container = document.getElementById('work-list');
-            container.innerHTML = '';
-            const filtered = workDB.filter(x => x.cat === cat);
+        const allData = {
+            "Эм": {
+                "Авт. выкл.": ["Установка автоматических выключателей (габарит 100) 100 250А (шт)", "Установка автоматических выключателей (габарит 100) 40 80А (шт)", "Установка автоматических выключателей 25 80А (шт)", "Установка автоматических выключателей однополюсных 10 63А (шт)"],
+                "Кабель Ал-й": ["Монтаж Кабель алюминиевый 3х185+1х120мм2 АВВГ 0,66 (м)", "Монтаж Кабель алюминиевый 3х70+1х35мм2 АВВГ 0,66 (м)", "Монтаж Кабель алюминиевый 5x70 АВВГ 0,66 (м)", "Монтаж Кабель алюминиевый 5x95 АВВГ 0,66 (м)", "Монтаж Кабель алюминиевый 3х95+1 х50 мм2 АВВГ 0,66 (м)", "Монтаж Кабель алюминиевый 1х120мм2 АПВ (м)", "Монтаж Кабель алюминиевый 1х35мм2 АПВ (м)", "Монтаж Кабель алюминиевый 3х240+1х120мм2 АВВГ 0,66 (м)", "Монтаж Кабель алюминиевый 3х150+1х95мм2 АВВГ 0,66 (м)", "Монтаж Кабель алюминиевый 3х150+1х95мм2 5x120 АВВГ 0,66 (м)"],
+                "Кабель Медь": ["Монтаж Кабель медный 3х1,5мм2 ВВГ нг ls 0,66 (м)", "Монтаж Кабель медный 3х2,5мм2 ВВГ нг ls 0,66 (м)", "Монтаж Кабель медный 3х4мм2 (м)", "Монтаж Кабель медный 1х6мм2 (м)", "Монтаж Кабель медный 1x3мм2 (м)", "Монтаж Кабель медный 1x16mm2 ПВ3 0,45 (м)", "Монтаж Кабель медный ПВ3 0,45 (м)", "Монтаж Кабель медный 3х10мм2 ВВГ нг ls 0,66 (м)", "Монтаж Кабель медный 3x16мм2 ВВГ нг ls 0,66 (м)", "Монтаж Кабель медный 2х1,5мм2 (м)", "Монтаж Кабель медный 4х1,5мм2 ВВГ нг ls 0,66 (м)", "Монтаж Кабель медный силовой 5х16мм2 ВВГ нг ls 0,66 (м)", "Монтаж Кабель медный 5х1,5мм2 ВВГ нг ls 0,66 (м)", "Монтаж Кабель медный 5х10мм2 ВВГ нг ls 0,66 (м)", "Монтаж Кабель медный 5х25мм2 ВВГ нг ls 0,66 (м)", "Монтаж Кабель медный 3х35+1 х16 мм2 ВВГ нг ls 0,66 (м)", "Монтаж Кабель медный 5х4мм2 ВВГ нг ls 0,66 (м)", "Монтаж Кабель медный силовой 5х2,5мм2 ВВГ нг ls 0,66 (м)", "Монтаж Кабель медный 2х2,5мм2 ВВГ нг ls 0,66 (м)", "Монтаж Кабель медный силовой 5х6мм2 ВВГ нг ls 0,66 (м)", "Монтаж Кабель медный 2х0,75мм2 ТРП 1 (м)", "Монтаж Кабель медный 3х0,75мм2 ТРП 1 (м)", "Монтаж Кабель медный 3х1мм2 ТРП 1 (м)"],
+                "Лотки": ["Монтаж кабельных лотков 300x50x0,7 (м)", "Монтаж кабельных лотков 200x50x0,7 (м)", "Монтаж кабельных лотков 100x50x0,7 (м)"],
+                "Монт изделия": ["Медные и алюминиевые наконечники (120 240мм2) (Сборка) (шт)", "Медные и алюминиевые наконечники (16 95 мм2) (Сборка) (шт)", "Сжим для проводов (орех) 120 240мм2 (Сборка) (шт)", "Сжим для проводов (орех) 16 95мм2 (Сборка) (шт)", "Установка клемника на 2 зажима СВ 2 (шт)", "Установка клемника на 3 зажима СВ 3 (шт)", "Установка клемника на 4 зажима СВ 4 (шт)", "Установка клемника на 5 зажимов СВ 5 (шт)", "Установка коробка ответвительная (для кабелей) (шт)", "Установка Подрозетник (глубокий) (шт)", "Установка Подрозетник (обычный) (шт)"],
+                "Освещение": ["Установка фильтра сетевого помехоподавляющего 2ARS 418 UNI LED (шт)", "Установка светильников потолочных, светодиодный, мощность 36Вт А 270 4000 К (шт)", "Установка светильников потолочных, светодиодный, мощность 18Вт OD LED 8 4000К (шт)", "Установка светильников потолочных, на 1 лампу, IP 44 CD LED (шт)", "Установка плафонов для лифтовой шахты CD LED 30вт (шт)", "Установка патрона Е27 (шт)", "Установка светильников потолочных, светодиодный, мощность 36Вт 4ARS 418 UNI LED (шт)", "Установка светильника потолочного НПБ1301 (шт)", "Установка пакетных выключателей ПВ 380 (шт)", "Установка выключателя скрытой одно и двухклавишной (шт)"],
+                "Подг. работы": ["Пробивка сквозных отверстий в кирпиче до25мм (шт)", "Пробивка сквозных отверстий в бетоне до25мм (шт)", "Штроба по кирпичу (м)", "Штроба по бетону (м)", "Отверстия в перекрытии д32 100 (шт)"],
+                "Э К Щиты": ["ЩК (щит квартирный) (Установка) (шт)", "ЩЭ (Щит этажный) (Установка) (шт)", "ЩК (щит квартирный) (Сборка) (шт)", "ЩЭ (Щит этажный) (Сборка) (шт)"],
+                "ЭУИ": ["Установка звонков квартирных (шт)", "Установка квартирных вытяжных вентиляторов (шт)", "Установка розетка ном.=16а. 220В (шт)", "Установка розетка 380В (шт)", "Установка пост управления кнопочный (шт)"],
+                "Трубы и прочее": ["Монтаж гофрированной трубы ПВХ Ф16мм (м)", "Монтаж гофрированной трубы ПВХ Ф20мм (м)", "Монтаж гофрированной трубы ПВХ Ф25мм (м)", "Монтаж гофрированной трубы ПВХ Ф32мм (м)", "Монтаж Кабель канал, сечением 25х16 (м)", "Монтаж Кабель канал, сечением 40х60 (м)", "Установка металлических труб Ø57 (гильз) (шт)", "Монтаж трубы полиэтиленовой ПВД20 (м)", "Монтаж трубы полиэтиленовой ПВД25С (м)", "Монтаж трубы полиэтиленовой ПВД32С (м)", "Монтаж трубы полиэтиленовой ПВД50С (м)", "Монтаж трубы полиэтиленовой ПВД63С (м)", "Монтаж металлорукав 19мм (шт)", "Монтаж сталь круг д10мм (м)", "Монтаж сталь полосовая 40х4мм (м)", "Монтаж сталь угловая 50х50х5мм (м)", "Монтаж соединительной коробки (шт)", "Монтаж ящик с главной заземляющей шиной (шт)", "Установка коробки уравнивания потенциалов ЩДУП (шт)"],
+                "Щиты": ["Вводно-распределительное устройство ВРУ 1 (Установка) (шт)", "ПР 1 (Установка) (шт)", "ЩУР (щит учетно распределительный) (Установка) (шт)", "ЩВ (Установка) (шт)", "ЩАО 1 (Установка) (шт)", "ЩПН (Установка) (шт)", "ЩРА (Установка) (шт)", "АВР (Установка) (шт)", "Щ ВДУ (Установка) (шт)", "ЩЛ (щит лифтов) (Установка) (шт)", "ЩНО (Щит наружное освещение) (Установка) (шт)", "ЩС (Установка) (шт)", "ЩА (Приточная установка) (Установка) (шт)", "ЩР (Установка) (шт)", "Вводно распределительное устройство ВРУ 1 (Сборка) (шт)", "ПР 1 (Сборка) (шт)", "ЩУР (Сборка) (шт)", "ЩВ (Сборка) (шт)", "ЩАО 1 (Сборка) (шт)", "ЩПН (Сборка) (шт)", "ЩРА (Сборка) (шт)", "АВР (Сборка) (шт)", "Щ ВДУ (Сборка) (шт)", "ЩЛ (Сборка) (шт)", "ЩНО (Сборка) (шт)", "ЩС (щит силовой) (Сборка) (шт)", "ЩА (Приточная установка) (Сборка) (шт)", "ЩР (Сборка) (шт)"],
+                "Фасад": ["Монтаж сливной системы (труба д32мм) (м)", "Прокладка кабеля 3х2,5 (Фасад) (м)", "Прокладка гофры (Фасад) (м)", "Установка светодиодных светильников (Фасад) (шт)", "Монтаж фото реле датчика (Фасад) (шт)", "Установка автоматического выключателя (Фасад) (шт)", "Установка щитка (Фасад) (шт)"]
+            },
+            "Мех": {
+                "Подг. работы": ["Штробление стен (50х50) (глубина х ширина)(кирпич) (м)", "Отверстия в перегородках, перекрытиях (до108 мм, толщина бетона до 15см) (м)", "Отверстия в перегородках (до 108 мм, толщина бетона до 40см) (м)", "Отверстия в перегородках (100х100мм) (кирпич) (м)", "Штробление стяжки 50х50мм (Глубина х ширина) (м)", "Штробление стен 50х50мм (Глубина х ширина) (м)"],
+                "ППР 20": ["Монтаж труб пластиковых Ø20 композит (м)", "Установка муфт, отводов, полуотводов ППР Ø20 (шт)", "Установка тройников и мостиков обводных ППР Ø20 (шт)", "Установка разъемов металлопластиковых Ø20 вн резьба (шт)", "Установка муфт с внутренней резьбой ппр Ø20 (шт)", "Установка вентилей барашковых ППР Ø20 (шт)", "Установка шаблона душевого ппр Ø20 (шт)"],
+                "ППР 25": ["Монтаж труб пластиковых Ø25 композит (м)", "Установка муфт, отводов, полуотводов ППР Ø25 (шт)", "Установка тройников ППР Ø25 (шт)", "Установка разъемов металлопластиковых Ø25 3 4 нар резьба (шт)"],
+                "ППР 32": ["Монтаж труб пластиковых Ø32 композит (м)", "Установка муфт, отводов, полуотводов ППР Ø32 (шт)", "Установка тройников ППР Ø32 (шт)", "Установка разъемов металлопластиковых Ø32 3 4 нар резьба (шт)"],
+                "Радиатор": ["Установка радиаторов отопления (шт)", "Угловые краны для радиаторов (шт)", "Установка терморегулятора для радиатора (шт)", "Установка муфты с наружней резьбой ппр Ø25 для отопления радиатора (шт)"],
+                "Трубы стальные": ["Монтаж трубы металлической Ø15х2,5 (м)", "Монтаж трубы металлической Ø20х2,5 (м)", "Монтаж трубы металлической Ø25х2,8 (м)", "Монтаж трубы металлической Ø32х2,8 (м)", "Монтаж трубы металлической Ø40х3,0 (м)", "Монтаж трубы металлической Ø57х3,0 (м)", "Монтаж трубы металлической Ø76х3,2 (м)", "Монтаж трубы металлической Ø89х3,5 (м)", "Монтаж трубы металлической Ø108х3,5 (м)", "Монтаж трубы металлической Ø159х4,0 (м)", "Покраска, грунтовка труб (2 слой) (м)"],
+                "Отводы сталь": ["Установка кованных отводов с короткой резьбой (гусак) Ø15 25 (шт)", "Установка кованных отводов д20 (шт)", "Установка кованных отводов д25 (шт)", "Установка кованных отводов д32 (шт)", "Установка кованных отводов д45 (шт)", "Установка кованных отводов д57 (шт)", "Установка кованных отводов д76 (шт)", "Установка кованных отводов д89 (шт)", "Установка кованных отводов д108 (шт)", "Установка кованных отводов д159 (шт)"],
+                "Переходы сталь": ["Установка переходов кованых д25 15 (шт)", "Установка переходов кованых д40 32 (шт)", "Установка переходов кованых д57 40 (шт)", "Установка переходов кованых д76 57 (шт)", "Установка переходов кованых д89 76 (шт)", "Установка переходов кованых д108 89 (шт)", "Установка переходов кованых д159 108 (шт)"],
+                "Фитинги": ["Установка тройника чугунного резьбового (шт)", "Установка бочат (шт)", "Установка тройников кованых д15 20 (шт)", "Установка резьб муфт сварных д15 20 (шт)", "Установка фланцев д32 65 (шт)", "Установка фланцев д80 100 (шт)", "Установка фланцев д125 150 (шт)"],
+                "Запорная арматура": ["Установка шаровых кранов 15 (шт)", "Установка заглушек латунных (шт)", "Установка шаровых кранов приварных Ду 20 25 (шт)", "Установка шаровых кранов приварных Ду 32 (шт)", "Установка шаровых кранов приварных Ду 40 (шт)", "Установка шаровых кранов приварных Ду 50 (шт)", "Установка запорных клапанов фланцевых (ASV I) Ду 50 65 (шт)", "Установка запорных клапанов фланцевых (ASV I) Ду 32 40 (шт)", "Установка вентиля барашкового Ø25 (шт)"],
+                "Баланс. арматура": ["Установка автоматических балансировочных запорных клапанов (шт)", "Установка автоматических балансировочных клапанов (ASV PV) Ду 32 40 (шт)", "Установка автоматических балансировочных клапанов (ASV PV) Ду 50 65 (шт)"],
+                "Изоляция": ["Изоляция пластиковых труб (м)", "Изоляция из вспененного полиэтилена Ду 22 (м)", "Изоляция из вспененного полиэтилена Ду 28 (м)", "Изоляция из вспененного полиэтилена Ду 35 (м)", "Изоляция из вспененного полиэтилена Ду 42 (м)", "Изоляция из вспененного полиэтилена Ду 48 (м)", "Изоляция из вспененного полиэтилена Ду 60 (м)", "Изоляция из вспененного полиэтилена Ду 108 (м)"],
+                "ПВХ": ["Монтаж трубы канализационной пвх д150 (м)", "Монтаж трубы канализационной пвх д100 (м)", "Монтаж трубы канализационной пвх д50 (м)", "Установка фасонной части пвх д150 (шт)", "Установка фасонной части пвх д100 (шт)", "Установка фасонной части пвх д50 (шт)", "Установка хомута металлического д150 (шт)", "Установка хомута металлического д100 (шт)", "Установка хомута металлического д50 (шт)"],
+                "Пожарный": ["Пожарный кран Ду 50 65 (шт)", "Пожарный кран Ду 100 (шт)", "Установка резьб сварных д50 65 (шт)", "Установка пожарных шкафов (одинарный) (шт)", "Установка пожарных шкафов (двойной) (шт)"],
+                "Фаянс": ["Установка унитаза (шт)", "Установка умывальника керамического (шт)", "Установка ванны (шт)", "Установка полотенцесушителя (шт)", "Установка смесителя для умывальника (шт)", "Установка смесителя для ванны (шт)", "Установка сифона для умывальника (шт)", "Установка мойки для кухни (шт)", "Установка смесителя для мойки (шт)", "Установка сифона для мойки (шт)", "Установка углового крана для полотенцесушителя д15 (шт)", "Установка углового крана д15 (шт)"],
+                "Приборы": ["Установка счетчиков крыльчатых д15 (шт)", "Установка теплосчетчиков (шт)", "Установка манометров Ду 15 (шт)", "Установка термометров Ду 15 (шт)"],
+                "Оборудование": ["Установка повысительной насосной станции Sololift (шт)", "Установка дренажного насоса (типа Гном) (шт)", "Установка водомерных узлов д80 (рама) (шт)", "Установка водомерных узлов д50 (рама) (шт)", "Установка водомерных узлов д40 (рама) (шт)", "Установка водомерных узлов д15 (рама) (шт)", "Установка электрических клапанов (шт)", "Установка пожарной насосной станции (шт)"],
+                "Защита": ["Установка фильтров сетчатых (шт)", "Установка обратных клапанов (шт)", "Установка автоматического воздухоотводчика (шт)", "Установка компенсатора сильфонного Ду 20 (шт)", "Установка компенсатора сильфонного Ду 25 (шт)", "Установка компенсатора сильфонного Ду 32 (шт)", "Установка компенсатора сильфонного Ду 40 (шт)", "Установка компенсатора сильфонного Ду 50 (шт)"]
+            },
             
-            if(filtered.length === 0) {
-                container.innerHTML = '<div style="text-align:center; padding:20px; opacity:0.5;">Работ в этой категории пока нет. Добавьте их в "Базе".</div>';
-                document.getElementById('add-btn').style.display = 'none';
-                return;
+            "Стр": {
+                "Кладка": [
+                    "Газоблок 600*300*200 (шт)",
+                    "Сетка ВР 4 (15см) (м)",
+                    "Газоблок 600*300*100 (шт)",
+                    "Сетка ВР 4 (10см) (м)",
+                    "Арматура 6мм (м)",
+                    "Сетка металл 10*10мм (м2)"
+                ],
+                "Усиление стен": [
+                    "Уголок 50*50*5 (м)",
+                    "Уголок 40*40*4 (м)",
+                    "Полоса 40*3мм (м)",
+                    "Арматура 10мм (м)"
+                ],
+                "Черновая отделка": [
+                    "Бетоноконтакт (м2)",
+                    "Бетоноконтакт потолок (м2)",
+                    "Стяжка пола (м2)",
+                    "Сетка ВР4 15*15 (м2)",
+                    "Штукатурка стен (м2)",
+                    "Grender гипсовая (м2)",
+                    "Гипсокартон (м2)"
+                ],
+                "Чистовая отделка": [
+                    "Глат шпатлевка (м2)",
+                    "Финишная шпатлевка (м2)",
+                    "Покраска (м2)",
+                    "Кафель (м2)"
+                ]
             }
+        };
 
-            filtered.forEach(w => {
-                container.innerHTML += `
-                    <div class="card work-row">
-                        <div style="font-size:14px;">${w.name}<br><small style="color:green">${w.unit}</small></div>
-                        <input type="number" step="any" class="work-input" data-name="${w.name}" data-unit="${w.unit}" placeholder="0">
+        function loadCategories() {
+            const section = document.getElementById('section').value;
+            const cat = document.getElementById('category');
+            document.getElementById('items-container').innerHTML = '';
+            if(!section) { cat.style.display='none'; return; }
+            cat.innerHTML = '<option value="">2. Выберите категорию...</option>';
+            for(let c in allData[section]) cat.innerHTML += `<option value="${c}">${c}</option>`;
+            cat.style.display = 'block';
+        }
+
+        function loadItems() {
+            const section = document.getElementById('section').value;
+            const category = document.getElementById('category').value;
+            const div = document.getElementById('items-container');
+            div.innerHTML = '';
+            if(!category) { document.getElementById('add-btn').style.display='none'; return; }
+            
+            allData[section][category].forEach((item, i) => {
+                div.innerHTML += `
+                    <div class="item-row">
+                        <div class="item-name">${item}</div>
+                        <input type="number" 
+                               pattern="[0-9]*" 
+                               inputmode="decimal" 
+                               step="any" 
+                               class="item-input" 
+                               data-name="${item}" 
+                               placeholder="0">
                     </div>`;
             });
             document.getElementById('add-btn').style.display = 'block';
         }
 
         function addToBasket() {
-            const block = document.getElementById('rep-block').value;
-            const floor = document.getElementById('rep-floor').value;
-            const date = new Date().toISOString().split('T')[0];
-            const inputs = document.querySelectorAll('.work-input');
-            
+            // Считываем дату в момент добавления позиции
+            const dateVal = document.getElementById('report-date').value; 
+            const block = document.getElementById('block-num').value;
+            const floor = document.getElementById('floor-num').value;
+            const inputs = document.querySelectorAll('.item-input');
+            let hasData = false;
+
             inputs.forEach(input => {
                 const val = parseFloat(input.value);
-                if(val > 0) {
-                    basket.push({ date, block, floor, name: input.dataset.name, value: val, unit: input.dataset.unit });
-                    input.value = '';
+                if (val > 0) {
+                    finalBasket.push({
+                        date: dateVal, // <-- Сохраняем дату прямо в товар
+                        block: block,
+                        floor: floor,
+                        name: input.getAttribute('data-name'),
+                        value: val
+                    });
+                    input.value = ''; 
+                    hasData = true;
                 }
             });
-            updateBasketUI();
-            tg.HapticFeedback.impactOccurred('medium');
+
+            if(hasData) {
+                renderSummary();
+                tg.HapticFeedback.impactOccurred('medium');
+            } else {
+                tg.showAlert("Введите хотя бы один объем!");
+            }
         }
 
-        function updateBasketUI() {
-            const view = document.getElementById('basket-view');
-            view.innerHTML = basket.length > 0 ? '<h4>В корзине:</h4>' : '';
-            basket.forEach((item, i) => {
-                view.innerHTML += `<div class="card" style="font-size:12px;"><b>Бл.${item.block}, эт.${item.floor}</b> | ${item.name}: ${item.value} ${item.unit}</div>`;
+        function renderSummary() {
+            const container = document.getElementById('summary-container');
+            container.innerHTML = '<b>К отправке:</b><br>';
+            finalBasket.forEach((item, index) => {
+                // Добавили отображение даты в корзине, чтобы было понятно
+                container.innerHTML += `
+                    <div class="summary-item">
+                        <span class="remove-btn" onclick="removeItem(${index})">✖</span>
+                        <b>📅 ${item.date} | Блок ${item.block}, эт. ${item.floor}:</b><br>${item.name} — ${item.value}
+                    </div>`;
             });
-            document.getElementById('send-btn').style.display = basket.length > 0 ? 'block' : 'none';
-            document.getElementById('send-btn').innerText = `🚀 Отправить (${basket.length})`;
+            const btn = document.getElementById('submit-btn');
+            btn.style.display = finalBasket.length > 0 ? 'block' : 'none';
+            btn.innerText = `🚀 Отправить Excel (${finalBasket.length})`;
         }
 
-        function saveNewWork() {
-            const cat = document.getElementById('new-cat').value;
-            const name = document.getElementById('new-name').value.trim();
-            const unit = document.getElementById('new-unit').value.trim();
-            if(!name || !unit) return tg.showAlert("Заполните все поля!");
-            
-            workDB.push({cat, name, unit});
-            localStorage.setItem('gik_works_v3', JSON.stringify(workDB));
-            document.getElementById('new-name').value = '';
-            document.getElementById('new-unit').value = '';
-            tg.showAlert("Добавлено!");
-            renderDBList();
+        function removeItem(index) {
+            finalBasket.splice(index, 1);
+            renderSummary();
         }
 
-        function renderDBList() {
-            const container = document.getElementById('full-db-view');
-            container.innerHTML = '<h4>Справочник:</h4>';
-            workDB.forEach(w => {
-                container.innerHTML += `<div class="db-item"><span>${w.name}</span><b>${w.unit}</b></div>`;
-            });
+        function sendToBot() {
+            const data = {
+                // Теперь отправляем только корзину, даты уже внутри каждого элемента
+                items: finalBasket 
+            };
+            tg.sendData(JSON.stringify(data));
         }
-
-        function sendData() { tg.sendData(JSON.stringify({ items: basket })); }
-
-        init();
     </script>
 </body>
 </html>
+
